@@ -3,12 +3,15 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_mail import Mail, Message
-import smtplib
+from flask_cors import CORS
+import os
 
-app = Flask(__name__)
+# Initialize Flask App
+app = Flask(__name__, static_folder='static', template_folder='templates')
+CORS(app)  # Enable CORS for frontend communication
 
 # Configuration
-app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "your_secret_key")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -16,10 +19,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'expentiaadmiapp@gmail.com'  # Admin email
-app.config['MAIL_PASSWORD'] = 'jqlfpuhudywznqmz'  # Use Google App Password
-app.config['MAIL_DEFAULT_SENDER'] = 'expentiaadmiapp@gmail.com'  # Set a default sender
-app.config['MAIL_DEBUG'] = True  # Enable debugging
+app.config['MAIL_USERNAME'] = 'expentiaadmiapp@gmail.com'
+app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")  # Secure with environment variable
+app.config['MAIL_DEFAULT_SENDER'] = 'expentiaadmiapp@gmail.com'
+app.config['MAIL_DEBUG'] = True
 
 # Initialize Extensions
 mail = Mail(app)
@@ -34,12 +37,9 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
 
-from sqlalchemy.orm import Session
-
 @login_manager.user_loader
 def load_user(user_id):
-    with Session(db.engine) as session:
-        return session.get(User, int(user_id))
+    return db.session.get(User, int(user_id))
 
 # Contact Us Route - Handles Form Submission
 @app.route('/contact', methods=['GET', 'POST'])
@@ -59,12 +59,10 @@ def contact():
         try:
             mail.send(msg)
             flash("✅ Your message has been sent successfully!", "success")
-            print("✅ Email sent successfully!")  # Debugging log 
+            print("✅ Email sent successfully!")  # Debugging log
         except Exception as e:
             flash("❌ Error sending message. Please try again.", "danger")
             print(f"❌ Email Error: {e}")  # Debugging log
- 
-
 
         return redirect(url_for('contact'))
     
@@ -139,9 +137,12 @@ def expensetracker():
 def transactions():
     return render_template('transactions.html', username=current_user.username)
 
-# Initialize Database
-with app.app_context():
-    db.create_all()
+# Function to create the database
+def create_db():
+    with app.app_context():
+        db.create_all()
 
+# Run the app
 if __name__ == '__main__':
+    create_db()
     app.run(debug=True)

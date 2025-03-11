@@ -368,7 +368,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 async function fetchUsername() {
     try {
-        let response = await fetch("http://127.0.0.1:5000/user");
+        let response = await fetch("https://expentiafinal.onrender.com/user");
         let data = await response.json();
         document.getElementById("username").textContent = "Welcome, " + data.username + "!";
     } catch (error) {
