@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expantia - All Transactions</title>
+  <style>
+    /* Reset and Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+        background:  linear-gradient(135deg,  #d4cc72, #c0a1a1, #8fd0d0);
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    
+    /* Header Styles */
+    header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 15px 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    
+    nav ul {
+      display: flex;
+      list-style: none;
+    }
+    
+    nav ul li {
+      margin-left: 20px;
+    }
+    
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    
+    nav ul li a:hover, nav ul li a.active {
+      background-color: rgba(255,255,255,0.2);
+    }
+    
+    /* Main Content Styles */
+    main {
+      padding: 40px 0;
+    }
+    
+    .page-header {
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .page-title {
+      font-size: 28px;
+      color: #2c3e50;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn-outline {
+      background: none;
+      border: 1px solid #4e4b49;
+      color: #010101;
+    }
+    
+    .btn-outline:hover {
+      background-color: #0965e7;
+      color: white;
+    }
+    
+    /* Card and Table Styles */
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+    
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .table th, .table td {
+      padding: 15px 20px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .table th {
+      font-weight: 600;
+      color: #7f8c8d;
+      background-color: #f9f9f9;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .status-badge.expense {
+      background-color: rgba(231, 76, 60, 0.1);
+      color: #e74c3c;
+    }
+    
+    .status-badge.income {
+      background-color: rgba(39, 174, 96, 0.1);
+      color: #27ae60;
+    }
+    
+    .btn-delete {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1px solid #e74c3c;
+      background: none;
+      color: #e74c3c;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-delete:hover {
+      background-color: #e74c3c;
+      color: white;
+    }
+    
+    /* Filter and Search Section */
+    .filters {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    
+    .search-container {
+      flex: 1;
+      min-width: 250px;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 10px 15px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+    }
+    
+    .filter-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-select {
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      background-color: white;
+      font-size: 14px;
+    }
+    
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 5px;
+    }
+    
+    .pagination-btn {
+      padding: 8px 12px;
+      border: 1px solid #4d7e84;
+      background-color: white;
+      color: #333;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+    
+    .pagination-btn:hover, .pagination-btn.active {
+      background-color: #3498db;
+      color: white;
+      border-color: #3498db;
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      nav ul {
+        margin-top: 10px;
+      }
+      
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+      
+      .filters {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-content">
+      <div class="logo">Expentia</div>
+      <nav>
+        <ul>
+          <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+          <li><a href="{{ url_for('home') }}">Home</a></li>
+          <li><a href="{{ url_for('expensetracker') }}">Expense Tracker</a></li>
+          <li><a href="{{ url_for('contact') }}">Contact</a></li>
+          <li><a href="{{ url_for('index') }}">Logout</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  
+  <main>
+    <div class="container">
+      <div class="page-header">
+        <h1 class="page-title">All Transactions</h1>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline">Back to Dashboard</a>
+      </div>
+      
+      <div class="filters">
+        <div class="search-container">
+          <input type="text" class="search-input" id="searchTransactions" placeholder="Search transactions...">
+        </div>
+        <div class="filter-options">
+          <select class="filter-select" id="filterCategory">
+            <option value="Categories">Categories</option>
+            <option value="Food">Food</option>
+            <option value="Transportation">Transportation</option>
+            <option value="Utilities">Utilities</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Rent">Rent</option>
+            <option value="Fees">Fees</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Healthcare">Healthcare</option>
+            <option value="Others">Others</option>
+          </select>
+          <select class="filter-select" id="sortBy">
+            <option value="date-desc">Date (Newest First)</option>
+            <option value="date-asc">Date (Oldest First)</option>
+            <option value="amount-desc">Amount (Highest First)</option>
+            <option value="amount-asc">Amount (Lowest First)</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsTable">
+              <!-- Transactions will be loaded dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="pagination" id="pagination">
+        <!-- Pagination buttons will be generated dynamically -->
+      </div>
+    </div>
+  </main>
+
+  <script>
+   document.addEventListener("DOMContentLoaded", function() {
+    // Listen for changes in localStorage to update transactions dynamically
+    window.addEventListener("storage", function (event) {
+        if (event.key === "updateDashboard") {
+            location.reload(); // Refresh transactions page when data updates
+        }
+    });
+
+    // Load transactions from localStorage
+    let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+
+    // Set initial values
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let filteredTransactions = [...expenses];
+
+    // DOM Elements
+    const transactionsTable = document.getElementById("transactionsTable");
+    const pagination = document.getElementById("pagination");
+    const searchInput = document.getElementById("searchTransactions");
+    const filterCategory = document.getElementById("filterCategory");
+    const sortBySelect = document.getElementById("sortBy");
+
+    // Add event listeners for filters
+    searchInput.addEventListener("input", applyFilters);
+    filterCategory.addEventListener("change", applyFilters);
+    sortBySelect.addEventListener("change", applyFilters);
+
+    // Function to apply filters and sorting
+    function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const categoryFilter = filterCategory.value;
+        const sortOption = sortBySelect.value;
+
+        // Filter transactions
+        filteredTransactions = expenses.filter(transaction => {
+            const matchesSearch = (transaction.name || "").toLowerCase().includes(searchTerm);
+            const matchesCategory = categoryFilter === "Categories" || transaction.category === categoryFilter;
+            return matchesSearch && matchesCategory;
+        });
+
+        // Sort transactions
+        filteredTransactions.sort((a, b) => {
+            switch(sortOption) {
+                case "date-desc":
+                    return new Date(b.date) - new Date(a.date);
+                case "date-asc":
+                    return new Date(a.date) - new Date(b.date);
+                case "amount-desc":
+                    return b.amount - a.amount;
+                case "amount-asc":
+                    return a.amount - b.amount;
+                default:
+                    return new Date(b.date) - new Date(a.date);
+            }
+        });
+
+        // Reset to first page and render
+        currentPage = 1;
+        renderTransactions();
+        renderPagination();
+    }
+
+    // Function to render transactions for the current page
+    function renderTransactions() {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const currentPageItems = filteredTransactions.slice(startIndex, endIndex);
+
+        transactionsTable.innerHTML = "";
+
+        if (currentPageItems.length === 0) {
+            transactionsTable.innerHTML = `<tr><td colspan="6" style="text-align: center;">No transactions found</td></tr>`;
+            return;
+        }
+
+        currentPageItems.forEach((transaction, index) => {
+            const formattedDate = new Date(transaction.date).toLocaleDateString('en-IN', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+
+            const row = document.createElement('tr');
+            row.dataset.index = startIndex + index;
+
+            row.innerHTML = `
+                <td>${formattedDate}</td>
+                <td>${transaction.name || "Unnamed Expense"}</td>
+                <td>${transaction.category || "General"}</td>
+                <td>₹${transaction.amount.toLocaleString('en-IN')}</td>
+                <td><button class="btn-delete" data-index="${startIndex + index}">×</button></td>
+            `;
+
+            transactionsTable.appendChild(row);
+        });
+
+        // Add event listeners to delete buttons
+        document.querySelectorAll('.btn-delete').forEach(button => {
+            button.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                deleteExpense(index);
+            });
+        });
+    }
+
+    // Function to delete an expense
+    function deleteExpense(index) {
+        expenses.splice(index, 1);
+        localStorage.setItem("expenses", JSON.stringify(expenses));
+        localStorage.setItem("updateDashboard", "true"); // Notify dashboard & transactions page
+        applyFilters(); // Re-render
+    }
+
+    // Function to render pagination buttons
+    function renderPagination() {
+        const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+        pagination.innerHTML = "";
+
+        if (totalPages <= 1) return;
+
+        // Previous button
+        if (currentPage > 1) {
+            const prevButton = document.createElement('button');
+            prevButton.className = 'pagination-btn';
+            prevButton.textContent = '←';
+            prevButton.addEventListener('click', () => {
+                currentPage--;
+                renderTransactions();
+                renderPagination();
+            });
+            pagination.appendChild(prevButton);
+        }
+
+        // Page buttons
+        for (let i = 1; i <= totalPages; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+            pageButton.textContent = i;
+            pageButton.addEventListener('click', () => {
+                currentPage = i;
+                renderTransactions();
+                renderPagination();
+            });
+            pagination.appendChild(pageButton);
+        }
+
+        // Next button
+        if (currentPage < totalPages) {
+            const nextButton = document.createElement('button');
+            nextButton.className = 'pagination-btn';
+            nextButton.textContent = '→';
+            nextButton.addEventListener('click', () => {
+                currentPage++;
+                renderTransactions();
+                renderPagination();
+            });
+            pagination.appendChild(nextButton);
+        }
+    }
+
+    // Initial render
+    applyFilters();
+});
+
+</script>
+</body>
+</html>
