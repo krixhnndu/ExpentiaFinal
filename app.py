@@ -9,37 +9,6 @@ def get_db_connection():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     return conn
-
-# Home Route
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-# Signup Route
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Check if user exists
-        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-        existing_user = cursor.fetchone()
-        
-        if existing_user:
-            return "User already exists, try logging in!", 400
-        
-        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
-        conn.commit()
-        conn.close()
-
-        return redirect(url_for('login'))
-    
-    return render_template('signup.html')
-
 # Login Route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -63,6 +32,39 @@ def login():
             return "Invalid credentials, please try again!", 401
 
     return render_template('login.html')
+# Signup Route
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if user exists
+        cursor.execute("SELECT * FROM user WHERE username = ?", (username,))
+        existing_user = cursor.fetchone()
+        
+        if existing_user:
+            return "User already exists, try logging in!", 400
+        
+        
+        cursor.execute("INSERT INTO user (username, password) VALUES (?, ?)", (username, password))
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for('login'))
+    
+    return render_template('signup.html')
+
+
+
+# Home Route
+@app.route('/')
+def index():
+    return render_template('index.html')
+
 
 # Dashboard Route
 @app.route('/dashboard')
