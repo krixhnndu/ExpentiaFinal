@@ -10,6 +10,11 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+# Home Route
+@app.route('/')
+def index():
+    return render_template('index.html')
+
 # Login Route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -28,7 +33,7 @@ def login():
 
         if user:
             session['username'] = username
-            return redirect(url_for('home'))  # Redirect to home.html after successful login
+            return redirect(url_for('dashboard'))
         else:
             return "Invalid credentials, please try again!", 401
 
@@ -55,14 +60,9 @@ def signup():
         conn.commit()
         conn.close()
 
-        return redirect(url_for('login'))  # Redirect to login.html after successful signup
+        return redirect(url_for('login'))
     
     return render_template('signup.html')
-
-# Home Route
-@app.route('/home')
-def home():
-    return render_template('home.html')
 
 # Dashboard Route
 @app.route('/dashboard')
@@ -72,26 +72,11 @@ def dashboard():
 
     return render_template('dashboard.html')
 
-# Expense Tracker Route
-@app.route('/expensetracker')
-def expensetracker():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    return render_template('expensetracker.html')
-
-# User Route for Fetching Username
-@app.route('/user')
-def get_user():
-    if 'username' in session:
-        return jsonify({"username": session['username']})
-    return jsonify({"error": "Not logged in"}), 401
-
 # Logout Route
 @app.route('/logout')
 def logout():
     session.pop('username', None)
-    return redirect(url_for('home'))  # Redirect to home.html on logout
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True)  # Make sure to have debug on during testing
