@@ -1,148 +1,96 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from flask_mail import Mail, Message
-from flask_cors import CORS
-from flask_migrate import Migrate  
-import os
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+import sqlite3
 
-# Initialize Flask App
-app = Flask(__name__, static_folder='static', template_folder='templates')
-CORS(app)  
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Needed for session management
 
-# Configuration
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "your_secret_key")
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Database Connection Function
+def get_db_connection():
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
+    return conn
 
-# Flask-Mail Configuration
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME")
-app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")  
-app.config['MAIL_DEFAULT_SENDER'] = 'expentiaadmiapp@gmail.com'
-app.config['MAIL_DEBUG'] = True
+# Home Route
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-# Secure session cookies for deployment
-app.config['SESSION_COOKIE_SECURE'] = True  
-app.config['SESSION_COOKIE_HTTPONLY'] = True  
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  
-
-# Initialize Extensions
-mail = Mail(app)
-db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
-migrate = Migrate(app, db)  
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-
-# User Model
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
-
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.get(User, int(user_id))
-
-# Contact Us Route
-@app.route('/contact', methods=['GET', 'POST'])
-def contact():
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        message_body = request.form['message']
-
-        msg = Message(
-            subject=f"New Contact Form Submission from {name}",
-            sender=app.config['MAIL_DEFAULT_SENDER'],
-            recipients=['expentiaadmiapp@gmail.com'],  
-            body=f"Name: {name}\nEmail: {email}\n\nMessage:\n{message_body}"
-        )
-
-        try:
-            mail.send(msg)
-            flash("✅ Your message has been sent successfully!", "success")
-        except Exception as e:
-            flash("❌ Error sending message. Please try again.", "danger")
-
-        return redirect(url_for('contact'))
-    
-    return render_template('contact.html')
-
-# Authentication Routes
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username=username).first()
-        
-        if user and bcrypt.check_password_hash(user.password, password):
-            login_user(user)
-            flash("✅ Login successful!", "success")
-            return redirect(url_for('home'))
-        else:
-            flash("❌ Invalid username or password", "danger")
-    
-    return render_template('login.html')
-
+# Signup Route
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-        if User.query.filter_by(username=username).first():
-            flash("❌ Username already exists. Please choose another.", "danger")
-            return redirect(url_for('signup'))
+        # Check if user exists
+        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+        existing_user = cursor.fetchone()
         
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        new_user = User(username=username, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
+        if existing_user:
+            return "User already exists, try logging in!", 400
         
-        login_user(new_user)  
-        flash("✅ Account created successfully! You are now logged in.", "success")
-        return redirect(url_for('home'))  
+        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for('login'))
     
     return render_template('signup.html')
 
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    flash("ℹ️ You have been logged out.", "info")
-    return redirect(url_for('login'))
+# Login Route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
 
-# Page Routes
-@app.route('/')
-def index():
-    return render_template('index.html')
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+        user = cursor.fetchone()
+        
+        conn.close()
 
-@app.route('/home')
-@login_required
-def home():
-    return render_template('home.html', username=current_user.username)
+        if user:
+            session['username'] = username
+            return redirect(url_for('dashboard'))
+        else:
+            return "Invalid credentials, please try again!", 401
 
+    return render_template('login.html')
+
+# Dashboard Route
 @app.route('/dashboard')
-@login_required
 def dashboard():
-    return render_template('dashboard.html', username=current_user.username)
+    if 'username' not in session:
+        return redirect(url_for('login'))
 
+    return render_template('dashboard.html')
+
+# Expense Tracker Route
 @app.route('/expensetracker')
-@login_required
 def expensetracker():
-    return render_template('expensetracker.html', username=current_user.username)
+    if 'username' not in session:
+        return redirect(url_for('login'))
 
-@app.route('/transactions')
-@login_required
-def transactions():
-    return render_template('transactions.html', username=current_user.username)
+    return render_template('expensetracker.html')
 
-# Run the app
+# User Route for Fetching Username
+@app.route('/user')
+def get_user():
+    if 'username' in session:
+        return jsonify({"username": session['username']})
+    return jsonify({"error": "Not logged in"}), 401
+
+# Logout Route
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect(url_for('index'))
+
 if __name__ == '__main__':
     app.run(debug=True)
