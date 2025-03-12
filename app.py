@@ -4,12 +4,12 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_mail import Mail, Message
 from flask_cors import CORS
-from flask_migrate import Migrate  # ✅ Added Flask-Migrate
+from flask_migrate import Migrate  
 import os
 
 # Initialize Flask App
 app = Flask(__name__, static_folder='static', template_folder='templates')
-CORS(app)  # Enable CORS for frontend communication
+CORS(app)  
 
 # Configuration
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "your_secret_key")
@@ -21,15 +21,20 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME")
-app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")  # Secure with environment variable
+app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")  
 app.config['MAIL_DEFAULT_SENDER'] = 'expentiaadmiapp@gmail.com'
 app.config['MAIL_DEBUG'] = True
+
+# Secure session cookies for deployment
+app.config['SESSION_COOKIE_SECURE'] = True  
+app.config['SESSION_COOKIE_HTTPONLY'] = True  
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  
 
 # Initialize Extensions
 mail = Mail(app)
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
-migrate = Migrate(app, db)  # ✅ Added Flask-Migrate
+migrate = Migrate(app, db)  
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
@@ -43,7 +48,7 @@ class User(db.Model, UserMixin):
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
-# Contact Us Route - Handles Form Submission
+# Contact Us Route
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
     if request.method == 'POST':
@@ -54,17 +59,15 @@ def contact():
         msg = Message(
             subject=f"New Contact Form Submission from {name}",
             sender=app.config['MAIL_DEFAULT_SENDER'],
-            recipients=['expentiaadmiapp@gmail.com'],  # Admin email
+            recipients=['expentiaadmiapp@gmail.com'],  
             body=f"Name: {name}\nEmail: {email}\n\nMessage:\n{message_body}"
         )
 
         try:
             mail.send(msg)
             flash("✅ Your message has been sent successfully!", "success")
-            print("✅ Email sent successfully!")  # Debugging log
         except Exception as e:
             flash("❌ Error sending message. Please try again.", "danger")
-            print(f"❌ Email Error: {e}")  # Debugging log
 
         return redirect(url_for('contact'))
     
@@ -102,9 +105,9 @@ def signup():
         db.session.add(new_user)
         db.session.commit()
         
-        login_user(new_user)  # ✅ Log in the new user AFTER creating the account
+        login_user(new_user)  
         flash("✅ Account created successfully! You are now logged in.", "success")
-        return redirect(url_for('home'))  # ✅ Corrected missing closing parenthesis
+        return redirect(url_for('home'))  
     
     return render_template('signup.html')
 
@@ -113,7 +116,7 @@ def signup():
 def logout():
     logout_user()
     flash("ℹ️ You have been logged out.", "info")
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
 # Page Routes
 @app.route('/')
