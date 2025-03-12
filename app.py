@@ -4,6 +4,7 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_mail import Mail, Message
 from flask_cors import CORS
+from flask_migrate import Migrate  # ✅ Added Flask-Migrate
 import os
 
 # Initialize Flask App
@@ -19,7 +20,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'expentiaadmiapp@gmail.com'
+app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME")
 app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")  # Secure with environment variable
 app.config['MAIL_DEFAULT_SENDER'] = 'expentiaadmiapp@gmail.com'
 app.config['MAIL_DEBUG'] = True
@@ -28,6 +29,7 @@ app.config['MAIL_DEBUG'] = True
 mail = Mail(app)
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+migrate = Migrate(app, db)  # ✅ Added Flask-Migrate
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
@@ -100,8 +102,9 @@ def signup():
         db.session.add(new_user)
         db.session.commit()
         
-        flash("✅ Account created successfully! You can now log in.", "success")
-        return redirect(url_for('login'))
+        login_user(new_user)  # ✅ Log in the new user AFTER creating the account
+        flash("✅ Account created successfully! You are now logged in.", "success")
+        return redirect(url_for('home'))  # ✅ Corrected missing closing parenthesis
     
     return render_template('signup.html')
 
@@ -110,7 +113,7 @@ def signup():
 def logout():
     logout_user()
     flash("ℹ️ You have been logged out.", "info")
-    return redirect(url_for('login'))
+    return redirect(url_for('index'))
 
 # Page Routes
 @app.route('/')
@@ -137,12 +140,6 @@ def expensetracker():
 def transactions():
     return render_template('transactions.html', username=current_user.username)
 
-# Function to create the database
-def create_db():
-    with app.app_context():
-        db.create_all()
-
 # Run the app
 if __name__ == '__main__':
-    create_db()
     app.run(debug=True)
