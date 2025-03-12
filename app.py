@@ -9,6 +9,7 @@ def get_db_connection():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     return conn
+
 # Login Route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -27,11 +28,12 @@ def login():
 
         if user:
             session['username'] = username
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('home'))  # Redirect to home.html after successful login
         else:
             return "Invalid credentials, please try again!", 401
 
     return render_template('login.html')
+
 # Signup Route
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -49,22 +51,18 @@ def signup():
         if existing_user:
             return "User already exists, try logging in!", 400
         
-        
         cursor.execute("INSERT INTO user (username, password) VALUES (?, ?)", (username, password))
         conn.commit()
         conn.close()
 
-        return redirect(url_for('login'))
+        return redirect(url_for('login'))  # Redirect to login.html after successful signup
     
     return render_template('signup.html')
 
-
-
 # Home Route
-@app.route('/')
-def index():
-    return render_template('index.html')
-
+@app.route('/home')
+def home():
+    return render_template('home.html')
 
 # Dashboard Route
 @app.route('/dashboard')
@@ -93,7 +91,7 @@ def get_user():
 @app.route('/logout')
 def logout():
     session.pop('username', None)
-    return redirect(url_for('index'))
+    return redirect(url_for('home'))  # Redirect to home.html on logout
 
 if __name__ == '__main__':
     app.run(debug=True)
